@@ -685,7 +685,7 @@ def test_{test_name}_execution():
         run_git(["merge", "--no-ff", branch_name, "-m", f"Merge pull request #{pr_number} from {branch_name}"])
         
         if i % 10 == 0 or i == 80:
-            print(f"  ✓ Completed PR #{i:02d}/80: {title} | Accumulated LOC: {total_generated_loc:,}")
+            print(f"  [OK] Completed PR #{i:02d}/80: {title} | Accumulated LOC: {total_generated_loc:,}")
 
     # 4. Verification of Stats
     print("\n[3/5] Verifying Codebase Scale & Git Metrics...")
@@ -751,7 +751,7 @@ def test_{test_name}_execution():
                     z.write(file_path, arcname)
 
         size_mb = zip_path.stat().st_size / (1024 * 1024)
-        print(f"  ✓ {zip_path.name} created ({size_mb:.2f} MB)")
+        print(f"  [OK] {zip_path.name} created ({size_mb:.2f} MB)")
 
     elapsed = time.time() - t_start
     print(f"\n[5/5] All operations completed in {elapsed:.1f}s!")
