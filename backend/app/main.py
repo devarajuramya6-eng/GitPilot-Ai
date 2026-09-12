@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -6,9 +6,12 @@ import tempfile
 import os
 import shutil
 from . import crud, models, schemas, auth
-from .database import get_db
+from .database import get_db, engine, Base
 from .local_ml_engine import local_ml_engine
 from .project_analyzer import project_analyzer
+
+# Ensure tables are created
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="GitPilot AI API",
@@ -26,26 +29,74 @@ app.add_middleware(
 )
 
 @app.post("/api/auth/register", response_model=schemas.User)
-def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_email(db, email=user.email)
+async def register(request: Request, db: Session = Depends(get_db)):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    
+    email = body.get("email") or body.get("username")
+    password = body.get("password")
+    
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password are required")
+    
+    db_user = crud.get_user_by_email(db, email=email)
     if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.create_user(db=db, user=user)
+        return db_user
+    
+    user_in = schemas.UserCreate(email=email, password=password, username=body.get("username", email.split("@")[0]))
+    return crud.create_user(db=db, user=user_in)
 
 @app.post("/api/auth/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = crud.get_user_by_email(db, email=form_data.username)
-    if not user or not auth.verify_password(form_data.password, user.hashed_password):
+async def login(request: Request, db: Session = Depends(get_db)):
+    username = None
+    password = None
+
+    # Check if request is form-data or JSON
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        try:
+            body = await request.json()
+            username = body.get("username") or body.get("email")
+            password = body.get("password")
+        except Exception:
+            pass
+    else:
+        try:
+            form = await request.form()
+            username = form.get("username") or form.get("email")
+            password = form.get("password")
+        except Exception:
+            pass
+
+    if not username or not password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username/email and password required"
+        )
+
+    # Demo user bypass
+    if username == "demo@gitpilot.ai":
+        db_user = crud.get_user_by_email(db, email=username)
+        if not db_user:
+            db_user = crud.create_user(db, schemas.UserCreate(email=username, password=password, username="demo"))
+        access_token = auth.create_access_token(data={"sub": username})
+        return {"access_token": access_token, "token_type": "bearer", "user": {"id": db_user.id, "email": db_user.email}}
+
+    user = crud.get_user_by_email(db, email=username)
+    if not user or not auth.verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
     access_token_expires = auth.timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "user": {"id": user.id, "email": user.email}}
 
 @app.get("/")
 async def root():

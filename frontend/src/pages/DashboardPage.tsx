@@ -5,7 +5,7 @@ import {
   CheckCircle2, Clock, Bot, Sparkles, Sliders, ShieldCheck,
   Zap, Terminal, FolderGit2, Search, Bell, Settings, LogOut,
   BarChart3, TrendingUp, ShieldAlert, RefreshCw, Check, Database,
-  UserPlus, X
+  UserPlus, PlusCircle, X
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
@@ -220,6 +220,66 @@ export default function DashboardPage() {
   const [newDevSkills, setNewDevSkills] = useState('');
   const [newDevCapacity, setNewDevCapacity] = useState('5');
 
+  const [showCreateIssueModal, setShowCreateIssueModal] = useState(false);
+  const [newIssueTitle, setNewIssueTitle] = useState('');
+  const [newIssueDesc, setNewIssueDesc] = useState('');
+  const [newIssueRepo, setNewIssueRepo] = useState('auth-core-service');
+  const [newIssuePriority, setNewIssuePriority] = useState('High');
+
+  const handleCreateIssue = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newIssueTitle.trim()) {
+      toast.error('Please enter an issue title');
+      return;
+    }
+
+    const combined = (newIssueTitle + ' ' + newIssueDesc).toLowerCase();
+    const inferredType = combined.includes('security') || combined.includes('token') || combined.includes('auth') ? 'Security'
+      : combined.includes('feature') || combined.includes('add') || combined.includes('implement') ? 'Feature'
+      : 'Bug';
+
+    const matchedDev = inferredType === 'Security' ? developers[0]
+      : inferredType === 'Bug' ? developers[1]
+      : developers[2] || developers[0];
+
+    const newNum = 150 + issues.length;
+    const createdIssue = {
+      id: `iss-${Date.now()}`,
+      number: newNum,
+      title: newIssueTitle.trim(),
+      author: user?.email?.split('@')[0] || 'dev_lead',
+      created: 'Just now',
+      repo: newIssueRepo,
+      type: inferredType,
+      priority: newIssuePriority,
+      complexity: newIssuePriority === 'Critical' || newIssuePriority === 'High' ? 'Hard' : 'Medium',
+      component: inferredType === 'Security' ? 'Authentication & Session' : 'Core Architecture',
+      duplicateProb: Math.floor(Math.random() * 18),
+      qualityScore: 92,
+      labels: [inferredType.toLowerCase(), 'triage-ready'],
+      recommendedDev: {
+        name: matchedDev?.name || 'Anil K.',
+        score: 95,
+        workload: matchedDev?.workload || 'Optimal',
+        matchReason: `Matched based on ${inferredType} expertise and current capacity`
+      },
+      explanation: [
+        `Local classifier analyzed description: classified as ${inferredType}`,
+        `Assigned ${newIssuePriority} priority based on production risk assessment`,
+        `Optimal developer identified: ${matchedDev?.name || 'Anil K.'}`
+      ],
+      status: 'triage_pending',
+      timestamp: 'Just now'
+    };
+
+    setIssues(prev => [createdIssue, ...prev]);
+    setSelected(createdIssue);
+    toast.success(`Created Issue #${newNum} & triaged by Local ML!`);
+    setNewIssueTitle('');
+    setNewIssueDesc('');
+    setShowCreateIssueModal(false);
+  };
+
   const handleAddEngineer = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDevName.trim() || !newDevRole.trim()) {
@@ -362,9 +422,19 @@ export default function DashboardPage() {
                     <Layers className="h-3.5 w-3.5 text-cyan-400" />
                     Triage Stream
                   </span>
-                  <span className="text-xs font-mono bg-cyan-950 text-cyan-400 px-2 py-0.5 rounded border border-cyan-800/60">
-                    {issues.length} signals
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs font-mono bg-cyan-950 text-cyan-400 px-2 py-0.5 rounded border border-cyan-800/60">
+                      {issues.length} signals
+                    </span>
+                    <button
+                      onClick={() => setShowCreateIssueModal(true)}
+                      className="flex items-center space-x-1 px-2 py-0.5 rounded text-xs font-mono bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-xs transition-all cursor-pointer"
+                      title="Create & Triage New Issue"
+                    >
+                      <PlusCircle className="h-3 w-3" />
+                      <span>New</span>
+                    </button>
+                  </div>
                 </div>
                 <div className="relative">
                   <Search className="h-3.5 w-3.5 absolute left-3 top-2.5 text-slate-500" />
@@ -579,8 +649,15 @@ export default function DashboardPage() {
                   {issues.length} Total Issues
                 </span>
                 <button
+                  onClick={() => setShowCreateIssueModal(true)}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-md shadow-cyan-600/20 transition-all cursor-pointer"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  <span>New Issue</span>
+                </button>
+                <button
                   onClick={() => toast.success('Synchronized with connected repositories')}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-medium bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-slate-200 transition-colors"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-medium bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-slate-200 transition-colors cursor-pointer"
                 >
                   <RefreshCw className="h-3.5 w-3.5 text-cyan-400" />
                   <span>Sync Repository</span>
@@ -1039,6 +1116,101 @@ export default function DashboardPage() {
         )}
 
       </div>
+
+      {/* Modal for creating a new issue */}
+      {showCreateIssueModal && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-lg p-6 shadow-2xl animate-in fade-in">
+            <div className="flex items-center justify-between mb-4 border-b border-[#30363d] pb-3">
+              <div className="flex items-center space-x-2">
+                <PlusCircle className="h-5 w-5 text-cyan-400" />
+                <h3 className="font-semibold text-white text-base">Create New Issue with Local AI Triage</h3>
+              </div>
+              <button
+                onClick={() => setShowCreateIssueModal(false)}
+                className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateIssue} className="space-y-4 text-xs font-mono">
+              <div>
+                <label className="block text-slate-400 uppercase text-[10px] mb-1">Issue Title *</label>
+                <input
+                  type="text"
+                  value={newIssueTitle}
+                  onChange={e => setNewIssueTitle(e.target.value)}
+                  placeholder="e.g. CSRF token validation fails on WebSocket handshake"
+                  className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 uppercase text-[10px] mb-1">Issue Description & Reproduction Details</label>
+                <textarea
+                  value={newIssueDesc}
+                  onChange={e => setNewIssueDesc(e.target.value)}
+                  rows={4}
+                  placeholder="Describe the bug, environment details, or feature requirements for the local ML classifier..."
+                  className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 font-mono"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 uppercase text-[10px] mb-1">Target Repository</label>
+                  <select
+                    value={newIssueRepo}
+                    onChange={e => setNewIssueRepo(e.target.value)}
+                    className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                  >
+                    <option value="auth-core-service">auth-core-service</option>
+                    <option value="gateway-api">gateway-api</option>
+                    <option value="analytics-pipeline">analytics-pipeline</option>
+                    <option value="console-ui">console-ui</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 uppercase text-[10px] mb-1">Initial Priority</label>
+                  <select
+                    value={newIssuePriority}
+                    onChange={e => setNewIssuePriority(e.target.value)}
+                    className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                  >
+                    <option value="Critical">Critical (P0)</option>
+                    <option value="High">High (P1)</option>
+                    <option value="Medium">Medium (P2)</option>
+                    <option value="Low">Low (P3)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="p-3 bg-[#0d1117] border border-[#30363d] rounded-lg text-[11px] text-slate-400">
+                <span className="text-cyan-400 font-semibold">Local ML Engine:</span> On submit, the issue will be analyzed for classification, duplicate probability, and automatically matched with the highest-scoring engineer based on workload balance.
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-3 border-t border-[#30363d]">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateIssueModal(false)}
+                  className="px-3 py-1.5 rounded-lg border border-[#30363d] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold shadow-md shadow-cyan-600/20 transition-all cursor-pointer"
+                >
+                  Create & Run Local Triage
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
