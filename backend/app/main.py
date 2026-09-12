@@ -48,4 +48,54 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "version": "1.0.0"}
+    return {"status": "ok", "version": "1.0.0", "engine": "GitPilot Local ML Core"}
+
+@app.get("/api/issues")
+def get_issues():
+    return [
+        {
+            "id": 145,
+            "title": "JWT Token rotation fails intermittently under high concurrent requests",
+            "repo": "acme/auth-core-service",
+            "type": "Security",
+            "priority": "Critical",
+            "complexity": "Hard",
+            "component": "Authentication & Session",
+            "duplicateProb": 8,
+            "qualityScore": 92,
+            "recommendedDev": "Anil K.",
+            "status": "pending_approval"
+        },
+        {
+            "id": 146,
+            "title": "Memory leak in streaming response handler when client disconnects early",
+            "repo": "acme/gateway-api",
+            "type": "Bug",
+            "priority": "High",
+            "complexity": "Hard",
+            "component": "API Gateway / Network",
+            "duplicateProb": 84,
+            "qualityScore": 78,
+            "recommendedDev": "Elena Rostova",
+            "status": "pending_approval"
+        }
+    ]
+
+@app.post("/api/issues/{issue_id}/triage")
+def trigger_local_triage(issue_id: int):
+    # Deterministic local ML inference simulation matching local engine specs
+    return {
+        "issue_id": issue_id,
+        "classification": {"type": "Security", "confidence": 0.94},
+        "priority": {"level": "Critical", "confidence": 0.91},
+        "complexity": {"level": "Hard", "score": 88},
+        "duplicate_detection": {"top_candidate_id": 109, "similarity": 0.84},
+        "recommended_developer": {
+            "name": "Anil K.",
+            "match_score": 94,
+            "workload_status": "Optimal"
+        },
+        "execution_time_ms": 18,
+        "mode": "Local Machine Learning Pipeline (Zero External API Calls)"
+    }
+
