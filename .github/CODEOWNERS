@@ -1,0 +1,27 @@
+# GitPilot AI Code Ownership Configuration
+# Defines responsibility and review assignments across Frontend, Backend, and Database domains.
+
+# Frontend Team Lead
+/frontend/ lavanyatadisetty7@gmail.com
+
+# Backend & Machine Learning Lead
+/backend/app/services/ ramyadevaraju6@gmail.com
+/backend/app/ml/ ramyadevaraju6@gmail.com
+/backend/app/routers/ ramyadevaraju6@gmail.com
+/backend/app/workers/ ramyadevaraju6@gmail.com
+/backend/app/analytics/ ramyadevaraju6@gmail.com
+/backend/app/local_ml_engine.py ramyadevaraju6@gmail.com
+/backend/app/project_analyzer.py ramyadevaraju6@gmail.com
+/backend/app/main.py ramyadevaraju6@gmail.com
+/backend/app/auth.py ramyadevaraju6@gmail.com
+
+# Database & Infrastructure Architecture Lead
+/backend/app/models/ annapureddyskreddy@gmail.com
+/backend/app/database.py annapureddyskreddy@gmail.com
+/backend/app/crud.py annapureddyskreddy@gmail.com
+/backend/app/schemas/ annapureddyskreddy@gmail.com
+/backend/alembic/ annapureddyskreddy@gmail.com
+/backend/alembic.ini annapureddyskreddy@gmail.com
+/docker-compose.yml annapureddyskreddy@gmail.com
+/Dockerfile annapureddyskreddy@gmail.com
+/Makefile annapureddyskreddy@gmail.com
