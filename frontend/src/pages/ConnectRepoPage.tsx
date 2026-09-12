@@ -65,26 +65,56 @@ export default function ConnectRepoPage() {
     setRepoUrl('');
   };
 
-  const handleFileDrop = (files: FileList | null) => {
+  const handleFileDrop = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
-    if (!file.name.endsWith('.json') && !file.name.endsWith('.csv')) {
-      toast.error('Only .json or .csv issue export files are supported');
+    const isSupported = file.name.endsWith('.zip') || file.name.endsWith('.tar') || file.name.endsWith('.tar.gz') || file.name.endsWith('.json') || file.name.endsWith('.csv');
+    if (!isSupported) {
+      toast.error('Supported formats: .zip, .tar, .tar.gz (Codebases) or .json, .csv (Issue exports)');
       return;
     }
     setUpload({ file, preview: null, parsing: true });
-    setTimeout(() => {
-      setUpload({
-        file,
-        preview: {
-          name: file.name,
-          size: (file.size / 1024).toFixed(1) + ' KB',
-          issues: Math.floor(Math.random() * 200) + 50,
-        },
-        parsing: false,
-      });
-      toast.success(`Parsed "${file.name}" — ready to import`);
-    }, 1200);
+
+    if (file.name.endsWith('.zip') || file.name.endsWith('.tar') || file.name.endsWith('.tar.gz')) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('http://localhost:8000/api/projects/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        if (!res.ok) {
+          throw new Error('Project analysis failed');
+        }
+        const data = await res.json();
+        setUpload({
+          file,
+          preview: {
+            name: file.name,
+            size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+            issues: data.summary?.total_files || 0,
+          },
+          parsing: false,
+        });
+        toast.success(`Static Profiling Complete: ${data.summary?.total_loc} lines of code across ${data.summary?.total_files} files`);
+      } catch (err: any) {
+        toast.error(err.message || 'Upload error');
+        setUpload({ file: null, preview: null, parsing: false });
+      }
+    } else {
+      setTimeout(() => {
+        setUpload({
+          file,
+          preview: {
+            name: file.name,
+            size: (file.size / 1024).toFixed(1) + ' KB',
+            issues: Math.floor(Math.random() * 200) + 50,
+          },
+          parsing: false,
+        });
+        toast.success(`Parsed "${file.name}" — ready to import`);
+      }, 1000);
+    }
   };
 
   const handleImportFile = () => {
@@ -92,9 +122,10 @@ export default function ConnectRepoPage() {
     setConnecting(true);
     setTimeout(() => {
       setConnecting(false);
-      toast.success(`Imported ${upload.preview!.issues} issues — ML pipeline training started`);
+      setConnectedRepos(prev => [...prev, `project/${upload.preview!.name.replace(/\.[^/.]+$/, "")}`]);
+      toast.success(`Project "${upload.preview!.name}" connected! Local ML models trained.`);
       setUpload({ file: null, preview: null, parsing: false });
-    }, 1800);
+    }, 1500);
   };
 
   return (
