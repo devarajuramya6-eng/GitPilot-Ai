@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "gitpilot-ai"
+version = "1.0.0"
+description = "Intelligent GitHub Issue Triage & Developer Task Assignment Platform"
+authors = ["GitPilot AI Team <engineering@gitpilot.ai>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.110.0"
+uvicorn = "^0.28.0"
+sqlalchemy = "^2.0.28"
+pydantic = "^2.6.4"
+python-jose = "^3.3.0"
+passlib = "^1.7.4"
+bcrypt = "^4.1.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.1.1"
+pytest-cov = "^4.1.0"
+flake8 = "^7.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --cov=backend/app"
+testpaths = ["backend/tests"]

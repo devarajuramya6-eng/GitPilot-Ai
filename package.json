@@ -1,0 +1,27 @@
+{
+  "name": "gitpilot-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Intelligent GitHub Issue Triage & Developer Task Assignment Platform",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix frontend\" \"uvicorn backend.app.main:app --reload\"",
+    "build": "npm run build --prefix frontend",
+    "start": "npm run start --prefix frontend",
+    "test": "pytest backend/tests && npm run test --prefix frontend",
+    "lint": "ruff check backend && npm run lint --prefix frontend",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "lucide-react": "^0.475.0",
+    "zustand": "^4.5.2"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.5.3",
+    "vite": "^5.4.1"
+  }
+}
