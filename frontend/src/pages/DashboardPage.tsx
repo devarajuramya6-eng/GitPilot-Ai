@@ -4,7 +4,8 @@ import {
   Cpu, Layers, Users, Activity, GitBranch, AlertTriangle,
   CheckCircle2, Clock, Bot, Sparkles, Sliders, ShieldCheck,
   Zap, Terminal, FolderGit2, Search, Bell, Settings, LogOut,
-  BarChart3, TrendingUp, ShieldAlert, RefreshCw, Check, Database
+  BarChart3, TrendingUp, ShieldAlert, RefreshCw, Check, Database,
+  UserPlus, X
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
@@ -212,6 +213,59 @@ export default function DashboardPage() {
   const [search, setSearch] = useState('');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('All');
   const [isRetraining, setIsRetraining] = useState(false);
+  const [developers, setDevelopers] = useState(DEVELOPERS_DATA);
+  const [showAddDevModal, setShowAddDevModal] = useState(false);
+  const [newDevName, setNewDevName] = useState('');
+  const [newDevRole, setNewDevRole] = useState('');
+  const [newDevSkills, setNewDevSkills] = useState('');
+  const [newDevCapacity, setNewDevCapacity] = useState('5');
+
+  const handleAddEngineer = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDevName.trim() || !newDevRole.trim()) {
+      toast.error('Please provide engineer name and role');
+      return;
+    }
+
+    const initials = newDevName
+      .trim()
+      .split(' ')
+      .map(part => part[0]?.toUpperCase() || '')
+      .join('')
+      .slice(0, 2) || 'EN';
+
+    const skillList = newDevSkills
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const cap = parseInt(newDevCapacity, 10) || 5;
+
+    const newDev = {
+      id: `dev-${Date.now()}`,
+      name: newDevName.trim(),
+      role: newDevRole.trim(),
+      avatar: initials,
+      skills: skillList.length > 0 ? skillList : ['Backend', 'Full Stack', 'Python'],
+      openIssues: 0,
+      capacity: cap,
+      workload: 'Light',
+      workloadPercentage: 0,
+      resolvedCount: 0,
+      avgResolutionTime: '0.0 hrs',
+      successRate: 100,
+      specialty: skillList[0] ? `${skillList[0]} Specialist` : 'General Engineering',
+      recentActivity: 'Joined team workspace'
+    };
+
+    setDevelopers(prev => [newDev, ...prev]);
+    toast.success(`Added ${newDevName} to engineering pool! Workload balancer updated.`);
+    setNewDevName('');
+    setNewDevRole('');
+    setNewDevSkills('');
+    setNewDevCapacity('5');
+    setShowAddDevModal(false);
+  };
 
   const handleApprove = (id: string) => {
     setIssues(prev => prev.map(i => i.id === id ? { ...i, status: 'auto_approved' } : i));
@@ -642,15 +696,111 @@ export default function DashboardPage() {
                   Automated profile modeling from historical merged PRs, component ownership, and real-time active task loads.
                 </p>
               </div>
-              <div className="flex items-center space-x-2 text-xs font-mono text-emerald-400 bg-emerald-950 px-3 py-1.5 rounded border border-emerald-800/60">
-                <ShieldCheck className="h-4 w-4" />
-                <span>Workload Balancer Guardrail: Active</span>
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 text-xs font-mono text-emerald-400 bg-emerald-950 px-3 py-1.5 rounded border border-emerald-800/60">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>Guardrail: Active</span>
+                </div>
+                <button
+                  onClick={() => setShowAddDevModal(true)}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-md shadow-cyan-600/20 transition-all"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>Add Engineer</span>
+                </button>
               </div>
             </div>
 
+            {/* Modal for adding new engineer */}
+            {showAddDevModal && (
+              <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+                <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-md p-6 shadow-2xl animate-in fade-in">
+                  <div className="flex items-center justify-between mb-4 border-b border-[#30363d] pb-3">
+                    <div className="flex items-center space-x-2">
+                      <UserPlus className="h-5 w-5 text-cyan-400" />
+                      <h3 className="font-semibold text-white text-base">Add New Engineer to Team</h3>
+                    </div>
+                    <button
+                      onClick={() => setShowAddDevModal(false)}
+                      className="text-slate-400 hover:text-white transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleAddEngineer} className="space-y-4 text-xs font-mono">
+                    <div>
+                      <label className="block text-slate-400 uppercase text-[10px] mb-1">Engineer Name *</label>
+                      <input
+                        type="text"
+                        value={newDevName}
+                        onChange={e => setNewDevName(e.target.value)}
+                        placeholder="e.g. Rahul Sharma"
+                        className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 uppercase text-[10px] mb-1">Role / Title *</label>
+                      <input
+                        type="text"
+                        value={newDevRole}
+                        onChange={e => setNewDevRole(e.target.value)}
+                        placeholder="e.g. Senior Backend Engineer"
+                        className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 uppercase text-[10px] mb-1">Skills & Components (comma-separated)</label>
+                      <input
+                        type="text"
+                        value={newDevSkills}
+                        onChange={e => setNewDevSkills(e.target.value)}
+                        placeholder="e.g. Authentication, PostgreSQL, Python, Docker"
+                        className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 uppercase text-[10px] mb-1">Max Concurrent Task Capacity</label>
+                      <select
+                        value={newDevCapacity}
+                        onChange={e => setNewDevCapacity(e.target.value)}
+                        className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                      >
+                        <option value="3">3 Tasks (Junior / Part-time)</option>
+                        <option value="5">5 Tasks (Standard Full-time)</option>
+                        <option value="6">6 Tasks (Senior Staff)</option>
+                        <option value="8">8 Tasks (Lead / High Velocity)</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center justify-end space-x-2 pt-3 border-t border-[#30363d]">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddDevModal(false)}
+                        className="px-3 py-1.5 rounded-lg border border-[#30363d] text-slate-400 hover:text-white transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold shadow-md shadow-cyan-600/20 transition-all"
+                      >
+                        Save Engineer
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
             {/* Developer Grid */}
             <div className="grid grid-cols-2 gap-5">
-              {DEVELOPERS_DATA.map(dev => (
+              {developers.map(dev => (
                 <div key={dev.id} className="bg-[#161b22] border border-[#30363d] rounded-xl p-5 hover:border-[#484f58] transition-all">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
